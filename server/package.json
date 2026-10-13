@@ -1,5 +1,16 @@
 {
-  "name": "@haven/server", "private": true, "version": "1.0.0", "type": "module",
-  "scripts": {"start": "node src/index.js", "test": "node --test test/*.test.js"},
-  "dependencies": {"express": "^5.1.0", "mongoose": "^8.15.0", "dotenv": "^16.5.0"}
+  "name": "@haven/server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.7.1",
+    "mongoose": "^8.15.0"
+  }
 }

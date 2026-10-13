@@ -10,6 +10,10 @@ A simple MERN project for managing a hostel’s rooms, residents, and monthly re
 - Room creation with floor, bed capacity, monthly rent, and availability
 - Monthly payment recording, searchable payment history, and pending rent totals
 - Server validation, duplicate email/payment prevention, and concurrent-safe bed assignment
+- Student and warden logins with hashed passwords, database-backed sessions, and role permissions
+- Student portal with personal room details and rent history
+- Student maintenance requests with Open / In progress / Resolved status updates
+- Warden-controlled student password setup and reset
 - Responsive interface, keyboard-accessible dialogs, and synthetic demo data
 
 ## Run locally
@@ -27,7 +31,7 @@ No MongoDB account or Docker installation is needed for local development. The l
 
 ### Use your own MongoDB
 
-Copy `.env.example` to `.env` and set `MONGODB_URI` to a MongoDB connection string. The local launcher then uses that database. Set `SEED_DEMO=false` to start without sample data. Do not commit credentials.
+Copy `.env.example` to `.env` and set `MONGODB_URI` to a MongoDB connection string. The local launcher then uses that database. Set `SEED_DEMO=false` to disable sample seeding and demo sign-in. Configure `WARDEN_EMAIL`, `WARDEN_PASSWORD` (8–128 characters), and optionally `WARDEN_NAME` to create your first warden account. Existing accounts keep their password on later restarts. Do not commit credentials.
 
 ## Build and serve
 
@@ -46,7 +50,7 @@ npm test
 npm run build
 ```
 
-Tests use a separate temporary MongoDB database and cover concurrent room assignment, duplicate email/payment handling, payment amounts, validation, separate hostel assignments, and seed data integrity.
+Tests use a separate temporary MongoDB database and cover room assignment, payment integrity, role permissions, password login, session expiry/logout, private student records, password resets, requests, and seed data. Client tests cover HTML tunnel errors, incomplete JSON, network failures, and server validation messages.
 
 ## Project layout
 
@@ -62,15 +66,33 @@ scripts/dev.mjs    Local MongoDB and app launcher
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | GET | `/api/health` | Database readiness |
-| GET | `/api/data` | Rooms, residents, and payments |
+| GET | `/api/data` | Data allowed for the signed-in role |
+| POST | `/api/auth/login` | Sign in as student or warden |
+| GET | `/api/auth/me` | Current session |
+| POST | `/api/auth/logout` | End session |
 | POST | `/api/rooms` | Create a room |
 | POST | `/api/residents` | Register a resident and allocate a free bed |
-| POST | `/api/payments` | Record full rent for a resident and month |
+| POST | `/api/payments` | Warden records full monthly rent |
+| PATCH | `/api/residents/:id/password` | Warden resets student login |
+| POST | `/api/requests` | Student submits a hostel request |
+| PATCH | `/api/requests/:id` | Warden updates request status |
 
 ## Room assignments
 
 Every room belongs to either Boys Hostel or Girls Hostel. Registration requires an explicit gender: Male residents can only be assigned to Boys Hostel, and Female residents to Girls Hostel. The form offers only available beds in the matching hostel; the API also rejects incompatible assignments. Gender is never inferred from a resident’s name. Room numbers are globally unique; demo numbers use B- and G- prefixes.
 
+## Sign in
+
+The local demo shows **Try student demo** and **Try warden demo** buttons; these intentionally allow visitors to explore fictional data. Demo access is enabled only when `SEED_DEMO=true` (the local launcher defaults to true if unset). Disable it before using real resident records.
+
+For regular accounts, wardens sign in with the credentials configured on the first startup. Wardens add a resident and set the initial student password. Students choose **Student login** and use their registered email and that password. A warden can reset a student password from the resident details dialog; resetting it invalidates the student's active sessions. Existing demo residents can use password login after a warden sets their password.
+
+Passwords are salted and hashed with Node.js scrypt. Opaque sessions are stored in MongoDB for 24 hours and sent using HttpOnly, SameSite cookies (Secure over HTTPS). Students only receive their own records and cannot manage rooms, other residents, rent records, or request status. Authentication attempts are rate limited; browser mutations check request origin. Set `APP_ORIGIN` to the full frontend origin if your proxy rewrites the Host header. Production reverse proxies must connect through the trusted loopback interface.
+
+## Shared review links and connection errors
+
+Temporary tunnels only work while the workspace, MongoDB, app and tunnel remain running. If a tunnel returns an HTML error page, the client shows a connection message and keeps entered form details so you can retry after the host restores the service. Restarting a Cloudflare quick tunnel creates a new URL. Public links should point to the built app on Express port 3001.
+
 ## Scope
 
-This is a local educational demo. The administrator profile and hostel name are presentation defaults. There is no login, authorization, payment gateway, or outgoing email; payment recording tracks payments received elsewhere. Add authentication, access controls, backups, and production configuration before using it publicly or with real resident data.
+This is a simple educational project with a real Express backend and MongoDB persistence. Payment recording tracks payments received elsewhere; it does not charge cards or send email. Demo data and sign-in are for review. Use your own warden account, disable demo mode, and configure durable MongoDB storage, HTTPS, and backups for long-term use.

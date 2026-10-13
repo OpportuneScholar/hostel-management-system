@@ -9,6 +9,7 @@ const roomSchema = new mongoose.Schema({
 const residentSchema = new mongoose.Schema({
   name: { type: String, required: true, maxlength: 80 },
   gender: { type: String, enum: ['Male', 'Female'], required: true },
+  passwordHash: { type: String, select: false },
   email: { type: String, required: true, unique: true },
   phone: { type: String, default: '' },
   course: { type: String, required: true, maxlength: 80 },
@@ -28,3 +29,24 @@ paymentSchema.index({ resident: 1, month: 1 }, { unique: true });
 export const Room = mongoose.model('Room', roomSchema);
 export const Resident = mongoose.model('Resident', residentSchema);
 export const Payment = mongoose.model('Payment', paymentSchema);
+
+const wardenSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true, select: false }
+}, { timestamps: true });
+const sessionSchema = new mongoose.Schema({
+  tokenHash: { type: String, required: true, unique: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+  role: { type: String, enum: ['warden', 'student'], required: true },
+  expiresAt: { type: Date, required: true, expires: 0 }
+});
+const requestSchema = new mongoose.Schema({
+  resident: { type: mongoose.Schema.Types.ObjectId, ref: 'Resident', required: true },
+  title: { type: String, required: true, maxlength: 80 },
+  message: { type: String, required: true, maxlength: 1000 },
+  status: { type: String, enum: ['Open', 'In progress', 'Resolved'], default: 'Open' }
+}, { timestamps: true });
+export const Warden = mongoose.model('Warden', wardenSchema);
+export const Session = mongoose.model('Session', sessionSchema);
+export const ServiceRequest = mongoose.model('ServiceRequest', requestSchema);
