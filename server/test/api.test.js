@@ -158,6 +158,15 @@ test('cookie sessions authenticate both roles and keep student data private', as
   assert.equal(scoped.body.payments.length, 0);
   assert.equal(scoped.body.residents[0].passwordHash, undefined);
   for (const route of ['rooms', 'residents', 'payments']) assert.equal((await request(route, {}, login.cookie)).status, 403);
+  const fee = await request('payments', { resident: created.body._id, month: '2026-10', method: 'Cash' });
+  assert.equal(fee.status, 201);
+  const updatedFees = await request('data', null, login.cookie);
+  assert.equal(updatedFees.body.payments.length, 1);
+  assert.equal(updatedFees.body.payments[0].month, '2026-10');
+  assert.equal(updatedFees.body.payments[0].amount, 3500);
+  assert.equal(updatedFees.body.payments[0].resident._id, created.body._id);
+  assert.equal((await request(`payments/${fee.body._id}`, { amount: 1 }, login.cookie, 'PATCH')).status, 404);
+  assert.equal((await Payment.findById(fee.body._id)).amount, 3500);
   assert.equal((await request(`residents/${created.body._id}/password`, { password }, login.cookie, 'PATCH')).status, 403);
   const submitted = await request('requests', { title: 'Repair light', message: 'The desk light is not working.', resident: new mongoose.Types.ObjectId(), status: 'Resolved' }, login.cookie);
   assert.equal(submitted.status, 201);
@@ -173,6 +182,7 @@ test('cookie sessions authenticate both roles and keep student data private', as
   const second = await request('auth/login', { role: 'student', email: other.email, password: 'Other-test-password' }, null);
   assert.equal(second.status, 200);
   assert.equal((await request('data', null, second.cookie)).body.requests.length, 0);
+  assert.ok((await request('data', null, second.cookie)).body.payments.every(payment => payment.resident._id === other._id.toString()));
   const reset = await request(`residents/${created.body._id}/password`, { password: 'Updated-test-password' }, wardenCookie, 'PATCH');
   assert.equal(reset.status, 200);
   assert.equal((await request('data', null, login.cookie)).status, 401);

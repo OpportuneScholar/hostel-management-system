@@ -11,7 +11,8 @@ A simple MERN project for managing a hostel’s rooms, residents, and monthly re
 - Monthly payment recording, searchable payment history, and pending rent totals
 - Server validation, duplicate email/payment prevention, and concurrent-safe bed assignment
 - Student and warden logins with hashed passwords, database-backed sessions, and role permissions
-- Student portal with personal room details and rent history
+- Student portal with personal room details, current monthly fee, paid amount, remaining balance, total recorded payments, and rent history
+- Students can view their own fee records; only wardens can record payments. Open dashboards refresh every 15 seconds and when returning to the tab, with a student Refresh button for immediate checks
 - Student maintenance requests with Open / In progress / Resolved status updates
 - Warden-controlled student password setup and reset
 - Responsive interface, keyboard-accessible dialogs, and synthetic demo data

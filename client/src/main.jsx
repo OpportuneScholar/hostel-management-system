@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LayoutDashboard, BedDouble, Users, Wallet, Search, Plus, ArrowUpRight, ArrowRight, X, ChevronDown, Check, Building2, CalendarDays, MoreHorizontal, Menu, CircleHelp, RefreshCw, DoorOpen, MessageSquare, LogOut } from 'lucide-react';
 import './styles.css';
@@ -13,8 +13,19 @@ function Avatar({ name, index = 0 }) { return <span className={`avatar color-${i
 function Badge({ paid }) { return <span className={`badge ${paid ? 'paid' : 'pending'}`}><span />{paid ? 'Paid' : 'Pending'}</span>; }
 function App({ user, onLogout }) {
   const [page, setPage] = useState('Overview'), [data, setData] = useState(null), [error, setError] = useState(''), [query, setQuery] = useState(''), [filter, setFilter] = useState('All'), [modal, setModal] = useState(null), [toast, setToast] = useState(''), [mobile, setMobile] = useState(false), [hostel, setHostel] = useState('All hostels');
-  const load = async () => { try { setData(await api('data')); setError(''); } catch (err) { setError(err.message); } };
-  useEffect(() => { load(); }, []);
+  const load = useCallback(async () => { try { setData(await api('data')); setError(''); } catch (err) { setError(err.message); } }, []);
+  useEffect(() => {
+    load();
+    const refresh = () => { if (document.visibilityState === 'visible') load(); };
+    const timer = setInterval(refresh, 15000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [load]);
   useEffect(() => { const handler = e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); document.querySelector(".search input")?.focus(); } }; document.addEventListener("keydown", handler); return () => document.removeEventListener("keydown", handler); }, []);
   useEffect(() => { if (toast) { const timer = setTimeout(() => setToast(''), 4000); return () => clearTimeout(timer); } }, [toast]);
   const go = name => { setPage(name); setQuery(''); setFilter('All'); setMobile(false); };
